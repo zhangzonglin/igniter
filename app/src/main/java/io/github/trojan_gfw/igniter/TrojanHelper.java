@@ -11,13 +11,14 @@ public class TrojanHelper {
 
     public static void WriteTrojanConfig(TrojanConfig trojanConfig, String trojanConfigPath) {
         String config = trojanConfig.generateTrojanConfigJSON();
+        LogHelper.i("======save TrojanConfig",config);
         File file = new File(trojanConfigPath);
         try {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(config.getBytes());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LogHelper.e("save config error",e.getMessage());
         }
     }
 

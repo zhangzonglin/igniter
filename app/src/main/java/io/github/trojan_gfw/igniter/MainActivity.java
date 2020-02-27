@@ -26,6 +26,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText passwordText;
     private Switch ipv6Switch;
     private Switch verifySwitch;
+    private Switch bypassSwitch;
     private Switch clashSwitch;
     private TextView clashLink;
     private Button startStopButton;
@@ -128,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
         passwordText.setEnabled(inputEnabled);
         trojanURLText.setEnabled(inputEnabled);
         verifySwitch.setEnabled(inputEnabled);
+        bypassSwitch.setEnabled(inputEnabled);
         clashSwitch.setEnabled(inputEnabled);
         clashLink.setEnabled(inputEnabled);
     }
@@ -142,6 +146,7 @@ public class MainActivity extends AppCompatActivity {
         trojanURLText = findViewById(R.id.trojanURLText);
         ipv6Switch = findViewById(R.id.ipv6Switch);
         verifySwitch = findViewById(R.id.verifySwitch);
+        bypassSwitch = findViewById(R.id.bypassAppSwitch);
         clashSwitch = findViewById(R.id.clashSwitch);
         clashLink = findViewById(R.id.clashLink);
         clashLink.setMovementMethod(LinkMovementMethod.getInstance());
@@ -220,6 +225,17 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 TrojanConfig ins = Globals.getTrojanConfigInstance();
                 ins.setVerifyCert(isChecked);
+            }
+        });
+
+        bypassSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TrojanConfig ins = Globals.getTrojanConfigInstance();
+                boolean isChecked = ((Switch) v).isChecked();
+                ins.setBypassApp(isChecked);
+                if(isChecked)
+                    startActivity(new Intent(v.getContext(), AppManagerActivity.class));
             }
         });
 
@@ -357,6 +373,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        new AppProxyManager(this);
         File file = new File(Globals.getTrojanConfigPath());
         if (file.exists()) {
             try {
@@ -372,9 +389,20 @@ public class MainActivity extends AppCompatActivity {
                     passwordText.setText(ins.getPassword());
                     ipv6Switch.setChecked(ins.getEnableIpv6());
                     verifySwitch.setChecked(ins.getVerifyCert());
+                    bypassSwitch.setChecked(ins.isBypassApp());
+                    if(ins.getBypassAppList() != null && ins.getBypassAppList().length() > 0){
+                        for (int i = 0; i < ins.getBypassAppList().length() ; i++) {
+                            JSONObject object = ins.getBypassAppList().getJSONObject(i);
+                            AppInfo appInfo = new AppInfo();
+                            appInfo.setAppLabel(object.getString("label"));
+                            appInfo.setPkgName(object.getString("pkg"));
+                            if (AppProxyManager.Instance.isMlistApp(appInfo.getPkgName()))   //determine the config.json appInfo is installed app
+                                AppProxyManager.Instance.proxyAppInfo.add(appInfo);
+                        }
+                    }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LogHelper.e("==read config error",e.getMessage());
             }
         }
 

@@ -6,6 +6,19 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowAnimationStyle">@style/AnimationActivity</item>
     </style>
 
+    <style name="StyledScrollerTextAppearance" parent="@android:style/TextAppearance">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="AnimationActivity">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_slide_enter_right</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_slide_exit_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_slide_enter_left</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_slide_exit_right</item>
+    </style>
 </resources>

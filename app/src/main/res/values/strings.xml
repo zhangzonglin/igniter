@@ -23,4 +23,5 @@
     <!-- App Bar Menu -->
     <string name="action_test_connection">Test Connection</string>
     <string name="action_show_develop_info_logcat">Show develop info in logcat</string>
+    <string name="bypass_app">Bypass selected apps</string>
 </resources>

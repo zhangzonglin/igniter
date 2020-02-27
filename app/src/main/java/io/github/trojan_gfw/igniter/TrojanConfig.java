@@ -13,10 +13,12 @@ public class TrojanConfig {
     private int remotePort;
     private String password;
     private boolean verifyCert;
+    private boolean bypassApp;
     private String caCertPath;
     private boolean enableIpv6;
     private String cipherList;
     private String tls13CipherList;
+    private JSONArray bypassAppList;
 
 
     TrojanConfig() {
@@ -25,6 +27,7 @@ public class TrojanConfig {
         this.localPort = 1081;
         this.remotePort = 443;
         this.verifyCert = true;
+        this.bypassApp = false;
         this.cipherList = "ECDHE-ECDSA-AES128-GCM-SHA256:"
                 + "ECDHE-RSA-AES128-GCM-SHA256:"
                 + "ECDHE-ECDSA-CHACHA20-POLY1305:"
@@ -61,9 +64,11 @@ public class TrojanConfig {
                             .put("cipher_tls13", this.tls13CipherList)
                             .put("alpn", new JSONArray().put("h2").put("http/1.1")))
                     .put("enable_ipv6", this.enableIpv6)
+                    .put("bypass_app",this.bypassApp)
+                    .put("bypass_applist",this.bypassAppList)
                     .toString();
         } catch (Exception e) {
-            e.printStackTrace();
+            LogHelper.e("generate json error",e.getMessage());
             return null;
         }
     }
@@ -79,8 +84,19 @@ public class TrojanConfig {
                     .setEnableIpv6(json.getBoolean("enable_ipv6"))
                     .setVerifyCert(json.getJSONObject("ssl").getBoolean("verify"));
 
+            if(json.has("bypass_app"))
+                this.setBypassApp(json.getBoolean("bypass_app"));
+            if(json.has("bypass_applist")){
+                String tmpString = json.getString("bypass_applist");
+                LogHelper.i("read bypass_apps",tmpString);
+                if(!tmpString.isEmpty()){
+                    JSONArray jsonArray = new JSONArray(tmpString);
+                    this.setBypassAppList(jsonArray);
+                }
+            }
+
         } catch (Exception e) {
-            e.printStackTrace();
+            LogHelper.e("json2config error",e.getMessage());
         }
     }
 
@@ -178,5 +194,21 @@ public class TrojanConfig {
     public TrojanConfig setTls13CipherList(String tls13CipherList) {
         this.tls13CipherList = tls13CipherList;
         return this;
+    }
+
+    public boolean isBypassApp() {
+        return bypassApp;
+    }
+
+    public void setBypassApp(boolean bypassApp) {
+        this.bypassApp = bypassApp;
+    }
+
+    public JSONArray getBypassAppList() {
+        return bypassAppList;
+    }
+
+    public void setBypassAppList(JSONArray bypassAppList) {
+        this.bypassAppList = bypassAppList;
     }
 }

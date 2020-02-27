@@ -8,6 +8,9 @@ import android.os.ParcelFileDescriptor;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -86,15 +89,11 @@ public class ProxyService extends VpnService {
         setState(STARTING);
 
         VpnService.Builder b = new VpnService.Builder();
-        try {
-            b.addDisallowedApplication(getPackageName());
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            setState(STOPPED);
-        }
+
         enable_clash = intent.getBooleanExtra(CLASH_EXTRA_NAME, true);
         boolean enable_ipv6 = false;
-
+        boolean bypass_app = false;
+        JSONArray bypassapplist = new JSONArray();
         File file = new File(getFilesDir(), "config.json");
         if (file.exists()) {
             try {
@@ -103,11 +102,34 @@ public class ProxyService extends VpnService {
                     fis.read(content);
                     JSONObject json = new JSONObject(new String(content));
                     enable_ipv6 = json.getBoolean("enable_ipv6");
+                    if (json.has("bypass_app"))
+                        bypass_app = json.getBoolean("bypass_app");
+                    if (json.has("bypass_applist"))
+                        bypassapplist = json.getJSONArray("bypass_applist");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LogHelper.e("proxyService read error",e.getMessage());
             }
         }
+
+        // bypass app
+        try {
+            if (bypass_app && bypassapplist.length() > 0){
+                for (int i = 0; i < bypassapplist.length(); i++) {
+                    JSONObject app = bypassapplist.getJSONObject(i);
+                    b.addAllowedApplication(app.getString("pkg"));
+                }
+            }else {
+                b.addDisallowedApplication(getPackageName());
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            setState(STOPPED);
+        }catch (JSONException e) {
+            e.printStackTrace();
+            setState(STOPPED);
+        }
+
         b.setSession(getString(R.string.app_name));
         b.setMtu(VPN_MTU);
         b.addAddress(PRIVATE_VLAN4_CLIENT, 30);
@@ -135,7 +157,7 @@ public class ProxyService extends VpnService {
             b.addDnsServer("2001:4860:4860::8844");
         }
         pfd = b.establish();
-        LogHelper.e("VPN", "pfd established");
+        LogHelper.i("VPN", "pfd established");
 
         if (pfd == null) {
             shutdown();
